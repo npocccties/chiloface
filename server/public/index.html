@@ -3,11 +3,80 @@
 <head>
   <title>Express</title>
   <link rel="stylesheet" href="/stylesheets/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 
 <body>
-  <h1>Express</h1>
-  <p>Welcome to Express</p>
+  <video id="video" autoplay width="320" height="240"></video>
+  <canvas id="image" width="320" height="240"></canvas>
+  <br>
+  <button onclick="start()">撮影開始</button>
+  <button onclick="capture()">スナップショット</button>
+  <button onclick="regist2()">登録</button>
+  <button onclick="verify()">照合</button>
 </body>
 
+<script>
+  const video = document.getElementById('video');
+  const image = document.getElementById('image');
+
+  let stream;
+  let track;
+  let ic;
+  let blob;
+
+  async function start() {
+    try {
+      const constraints = {
+        audio: false,
+        video: true
+      };
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      track = stream.getVideoTracks()[0];
+      ic = new ImageCapture(track);
+      video.srcObject = stream;
+　　} catch(err) {
+      console.log('start error');
+　　}
+  }
+
+  async function capture() {
+    try {
+      blob = await ic.takePhoto();
+      console.log(blob);
+    } catch(err) {
+      console.log('capture error');
+    }
+  }
+
+  const params = {
+    type: 'image/png',
+    width: 640,
+    height: 480
+  };
+
+  async function regist1() {
+    const url = '/detect';
+    try {
+      const res = await axios.post(url, params);
+      console.log(res.data);
+    } catch(err) {
+      console.log('regist error');
+    }
+  }
+
+  async function regist2() {
+    const url = '/multi';
+    const form = new FormData();
+    form.append('params', JSON.stringify(params));
+    form.append('image', blob);
+
+    try {
+      const res = await axios.post(url, form);
+      console.log(res.data);
+    } catch(err) {
+      console.log('regist error');
+    }
+  }
+</script>
 </html>
