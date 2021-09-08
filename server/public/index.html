@@ -12,7 +12,8 @@
   <br>
   <button onclick="start()">撮影開始</button>
   <button onclick="capture()">スナップショット</button>
-  <button onclick="regist2()">登録</button>
+  <button onclick="upload1()">アップロード1</button>
+  <button onclick="upload2()">アップロード2</button>
   <button onclick="verify()">照合</button>
 </body>
 
@@ -55,18 +56,29 @@
     height: 480
   };
 
-  async function regist1() {
-    const url = '/detect';
+  async function blob2base64(blob) {
+    const ab = await blob.arrayBuffer();
+    const uia = new Uint8Array(ab);
+    const str = uia.reduce((data, byte) => {
+      return data + String.fromCharCode(byte);
+    }, '')
+    return btoa(str);
+  }
+
+  async function upload1() {
+    const url = '/upload';
     try {
+      params.image = await blob2base64(blob);
+      console.log(params);
       const res = await axios.post(url, params);
       console.log(res.data);
     } catch(err) {
-      console.log('regist error');
+      console.log('upload1 error');
     }
   }
 
-  async function regist2() {
-    const url = '/multi';
+  async function upload2() {
+    const url = '/upload';
     const form = new FormData();
     form.append('params', JSON.stringify(params));
     form.append('image', blob);
@@ -75,7 +87,7 @@
       const res = await axios.post(url, form);
       console.log(res.data);
     } catch(err) {
-      console.log('regist error');
+      console.log('upload2 error');
     }
   }
 </script>
