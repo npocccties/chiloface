@@ -8,23 +8,30 @@
 
 <body>
   <video id="video" autoplay width="320" height="240"></video>
-  <canvas id="image" width="320" height="240"></canvas>
+  <canvas id="canvas" width="320" height="240" style='display:none'></canvas>
   <br>
   <button onclick="start()">撮影開始</button>
   <button onclick="capture()">スナップショット</button>
   <button onclick="upload1()">アップロード1</button>
   <button onclick="upload2()">アップロード2</button>
+  <button onclick="compress()">圧縮</button>
   <button onclick="verify()">照合</button>
 </body>
 
 <script>
   const video = document.getElementById('video');
-  const image = document.getElementById('image');
+  const canvas = document.getElementById('canvas');
 
   let stream;
+  let streamSettings;
   let track;
   let ic;
   let blob;
+  const params = {
+    type: '',
+    width: 0,
+    height: 0
+  };
 
   async function start() {
     try {
@@ -34,7 +41,11 @@
       };
       stream = await navigator.mediaDevices.getUserMedia(constraints);
       track = stream.getVideoTracks()[0];
+      streamSettings = track.getSettings();
+      console.log(streamSettings);
       ic = new ImageCapture(track);
+      icc = await ic.getPhotoCapabilities();
+      console.log(icc);
       video.srcObject = stream;
 　　} catch(err) {
       console.log('start error');
@@ -45,16 +56,13 @@
     try {
       blob = await ic.takePhoto();
       console.log(blob);
+      params.type = blob.type;
+      params.width = streamSettings.width;
+      params.height = streamSettings.height;
     } catch(err) {
       console.log('capture error');
     }
   }
-
-  const params = {
-    type: 'image/png',
-    width: 640,
-    height: 480
-  };
 
   async function blob2base64(blob) {
     const ab = await blob.arrayBuffer();
@@ -89,6 +97,21 @@
     } catch(err) {
       console.log('upload2 error');
     }
+  }
+
+  async function compress() {
+    const bitmap = await createImageBitmap(blob);
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    blob = await new Promise(resolve => {
+      canvas.toBlob(b => {
+        resolve(b);
+      }, 'image/jpeg', 1.0);
+    });
+    console.log(blob);
+    params.type = blob.type;
+    params.width = canvas.width;
+    params.height = canvas.height;
   }
 </script>
 </html>
