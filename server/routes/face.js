@@ -32,7 +32,14 @@ router.post('/upload', upload.single('image'), function(req, res, next) {
     next(err);
   }
   console.log(params);
+  save(params);
   res.send();
 });
+
+const fs = require('fs');
+
+function save(params) {
+  fs.writeFileSync('upload.bin', params.image);
+}
 
 module.exports = router;
