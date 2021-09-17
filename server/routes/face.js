@@ -1,45 +1,40 @@
 const express = require('express');
 const router = express.Router();
 
-/* face detection */
-router.post('/detect', function(req, res, next) {
-  console.log(req.body);
-  res.send();
-});
-
-/* upload test */
+// parse parameter
 const multer = require('multer');
-const storage = multer.memoryStorage()
-const upload = multer({ storage: storage })
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
-router.post('/upload', upload.single('image'), function(req, res, next) {
-//  console.log('print req.file:');
-//  console.log(req.file);
-//  console.log('print req.body:');
-//  console.log(req.body);
+router.use(upload.single('image'));
 
-  let params;
-
+router.use(function(req, res, next) {
   if (req.get('content-type') === 'application/json') {
-    params = req.body;
-    params.image = Buffer.from(params.image, 'base64');
+    req.body.image = Buffer.from(req.body.image, 'base64');
   } else if (req.file) {
-    params = JSON.parse(req.body.params);
-    params.image = req.file.buffer;
+    req.body = JSON.parse(req.body.params);
+    req.body.image = req.file.buffer;
   } else {
     const err = new Error('invalid request');
     err.statusCode = 400;
     next(err);
   }
-  console.log(params);
-  save(params);
+  next();
+});
+
+// upload for test
+const fs = require('fs');
+
+router.post('/upload', function(req, res, next) {
+  console.log(req.body);
+  fs.writeFileSync('upload.bin', req.body.image);
   res.send();
 });
 
-const fs = require('fs');
-
-function save(params) {
-  fs.writeFileSync('upload.bin', params.image);
-}
+// face detection
+router.post('/detect', function(req, res, next) {
+  console.log(req.body);
+  res.send();
+});
 
 module.exports = router;
