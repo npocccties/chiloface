@@ -8,20 +8,26 @@
 
 <body>
   <video id="video" autoplay width="320" height="240"></video>
-  <canvas id="canvas" width="320" height="240" style='display:none'></canvas>
+  <canvas id="rcanvas" width="320" height="240"></canvas>
+  <canvas id="vcanvas" width="320" height="240"></canvas>
+  <canvas id="ccanvas" width="320" height="240" style='display:none'></canvas>
   <br>
   <button onclick="start()">撮影開始</button>
-  <button onclick="capture()">スナップショット</button>
-  <button onclick="compress()">圧縮</button>
+  <button onclick="registerFace()">登録</button>
+  <button onclick="verify()">照合</button>
+  <br>
+  <br>
+  <button onclick="capture()">capture</button>
+  <button onclick="compress()">compress</button>
   <button onclick="upload1()">upload1</button>
   <button onclick="detect()">detect</button>
-  <button onclick="verify()">verify</button>
-  <button onclick="registerFace()">registerFace</button>
 </body>
 
 <script>
   const video = document.getElementById('video');
-  const canvas = document.getElementById('canvas');
+  const rcanvas = document.getElementById('rcanvas');
+  const vcanvas = document.getElementById('vcanvas');
+  const ccanvas = document.getElementById('ccanvas');
 
   let stream;
   let streamSettings;
@@ -65,19 +71,23 @@
     }
   }
 
-  async function compress() {
+  async function drawImage(blob,canvas){
     const bitmap = await createImageBitmap(blob);
     const ctx = canvas.getContext("2d");
     ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  }
+
+  async function compress() {
+    await drawImage(blob, ccanvas);
     blob = await new Promise(resolve => {
-      canvas.toBlob(b => {
+      ccanvas.toBlob(b => {
         resolve(b);
       }, 'image/jpeg', 1.0);
     });
     console.log(blob);
     params.type = blob.type;
-    params.width = canvas.width;
-    params.height = canvas.height;
+    params.width = ccanvas.width;
+    params.height = ccanvas.height;
   }
 
   //
@@ -135,21 +145,28 @@
     }
   }
 
-  async function verify() {
-    try {
-      const res = await postWithImage1('/api/v1/verify', params, blob);
-      console.log(res.data);
-    } catch(err) {
-      console.log('verify error');
-    }
-  }
-
+  //
+  // UI function
+  //
   async function registerFace() {
+    await capture();
+    await drawImage(blob,rcanvas);
     try {
       const res = await postWithImage1('/api/v1/faces', params, blob);
       console.log(res.data);
     } catch(err) {
       console.log('registerFace error');
+    }
+  }
+
+  async function verify() {
+    await capture();
+    await drawImage(blob,vcanvas);
+    try {
+      const res = await postWithImage1('/api/v1/verify', params, blob);
+      console.log(res.data);
+    } catch(err) {
+      console.log('verify error');
     }
   }
 
