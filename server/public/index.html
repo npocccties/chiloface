@@ -74,7 +74,7 @@
   }
 
   async function upload1() {
-    const url = '/upload';
+    const url = '/api/v1/upload';
     try {
       params.image = await blob2base64(blob);
       console.log(params);
@@ -86,7 +86,7 @@
   }
 
   async function upload2() {
-    const url = '/upload';
+    const url = '/api/v1/upload';
     const form = new FormData();
     form.append('params', JSON.stringify(params));
     form.append('image', blob);
