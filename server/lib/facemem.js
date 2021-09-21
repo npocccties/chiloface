@@ -1,8 +1,6 @@
 const azure = require('./azure.js');
 
-const user = {
-  face: undefined,
-};
+const user = {};
 
 function checkUser(req, res, next) {
   req.user = user;
