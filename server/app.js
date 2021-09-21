@@ -1,11 +1,11 @@
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
 
-var apiv1Router = require('./routes/apiv1');
+const apiv1Router = require('./routes/apiv1');
 
-var app = express();
+const app = express();
 
 function faceErrorHandler (err, req, res, next) {
   try {
