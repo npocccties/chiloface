@@ -39,4 +39,20 @@ router.post('/detect', async function(req, res, next) {
   res.send(result);
 });
 
+// verify face
+router.post('/verify', async function(req, res, next) {
+  console.log(req.body);
+  const result = await face.verify(req);
+  console.log(result);
+  res.send(result);
+});
+
+// register face
+router.post('/faces', async function(req, res, next) {
+  console.log(req.body);
+  const result = await face.registerFace(req);
+  console.log(result);
+  res.send(result);
+});
+
 module.exports = router;

@@ -12,10 +12,11 @@
   <br>
   <button onclick="start()">撮影開始</button>
   <button onclick="capture()">スナップショット</button>
-  <button onclick="upload1()">アップロード1</button>
-  <button onclick="detect()">detect</button>
   <button onclick="compress()">圧縮</button>
-  <button onclick="verify()">照合</button>
+  <button onclick="upload1()">upload1</button>
+  <button onclick="detect()">detect</button>
+  <button onclick="verify()">verify</button>
+  <button onclick="registerFace()">registerFace</button>
 </body>
 
 <script>
@@ -64,46 +65,6 @@
     }
   }
 
-  async function blob2base64(blob) {
-    const ab = await blob.arrayBuffer();
-    const uia = new Uint8Array(ab);
-    const str = uia.reduce((data, byte) => {
-      return data + String.fromCharCode(byte);
-    }, '')
-    return btoa(str);
-  }
-
-  async function requestWithImage1(url, params, image) {
-    params.image = await blob2base64(image);
-    console.log(params);
-    return await axios.post(url, params);
-  }
-
-  async function upload1() {
-    try {
-      const res = await requestWithImage1('/api/v1/upload', params, blob);
-      console.log(res.data);
-    } catch(err) {
-      console.log('upload1 error');
-    }
-  }
-
-  async function requestWithImage2(url, params, image) {
-    const form = new FormData();
-    form.append('params', JSON.stringify(params));
-    form.append('image', image);
-    return await axios.post(url, form);
-  }
-
-  async function upload2() {
-    try {
-      const res = await requestWithImage2('/api/v1/upload', params, blob);
-      console.log(res.data);
-    } catch(err) {
-      console.log('upload2 error');
-    }
-  }
-
   async function compress() {
     const bitmap = await createImageBitmap(blob);
     const ctx = canvas.getContext("2d");
@@ -119,15 +80,78 @@
     params.height = canvas.height;
   }
 
+  //
+  // API common
+  //
+  async function blob2base64(blob) {
+    const ab = await blob.arrayBuffer();
+    const uia = new Uint8Array(ab);
+    const str = uia.reduce((data, byte) => {
+      return data + String.fromCharCode(byte);
+    }, '')
+    return btoa(str);
+  }
+
+  async function postWithImage1(url, params, image) {
+    params.image = await blob2base64(image);
+    console.log(params);
+    return await axios.post(url, params);
+  }
+
+  async function postWithImage2(url, params, image) {
+    const form = new FormData();
+    form.append('params', JSON.stringify(params));
+    form.append('image', image);
+    return await axios.post(url, form);
+  }
+
+  //
+  // API call
+  //
+  async function upload1() {
+    try {
+      const res = await postWithImage1('/api/v1/upload', params, blob);
+      console.log(res.data);
+    } catch(err) {
+      console.log('upload1 error');
+    }
+  }
+
+  async function upload2() {
+    try {
+      const res = await postWithImage2('/api/v1/upload', params, blob);
+      console.log(res.data);
+    } catch(err) {
+      console.log('upload2 error');
+    }
+  }
+
   async function detect() {
     try {
-      const res = await requestWithImage1('/api/v1/detect', params, blob);
+      const res = await postWithImage1('/api/v1/detect', params, blob);
       console.log(res.data);
     } catch(err) {
       console.log('detect error');
     }
   }
 
+  async function verify() {
+    try {
+      const res = await postWithImage1('/api/v1/verify', params, blob);
+      console.log(res.data);
+    } catch(err) {
+      console.log('verify error');
+    }
+  }
+
+  async function registerFace() {
+    try {
+      const res = await postWithImage1('/api/v1/faces', params, blob);
+      console.log(res.data);
+    } catch(err) {
+      console.log('registerFace error');
+    }
+  }
 
 </script>
 </html>
