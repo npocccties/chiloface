@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const fs = require('fs');
+const face = require('../lib/facemem.js');
 
 // parse parameter
 const multer = require('multer');
@@ -23,8 +25,6 @@ router.use(function(req, res, next) {
 });
 
 // upload for test
-const fs = require('fs');
-
 router.post('/upload', function(req, res, next) {
   console.log(req.body);
   fs.writeFileSync('upload.bin', req.body.image);
@@ -32,9 +32,11 @@ router.post('/upload', function(req, res, next) {
 });
 
 // face detection
-router.post('/detect', function(req, res, next) {
+router.post('/detect', async function(req, res, next) {
   console.log(req.body);
-  res.send();
+  const result = await face.detect(req);
+  console.log(result);
+  res.send(result);
 });
 
 module.exports = router;

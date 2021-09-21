@@ -13,7 +13,7 @@
   <button onclick="start()">撮影開始</button>
   <button onclick="capture()">スナップショット</button>
   <button onclick="upload1()">アップロード1</button>
-  <button onclick="upload2()">アップロード2</button>
+  <button onclick="detect()">detect</button>
   <button onclick="compress()">圧縮</button>
   <button onclick="verify()">照合</button>
 </body>
@@ -73,26 +73,31 @@
     return btoa(str);
   }
 
+  async function requestWithImage1(url, params, image) {
+    params.image = await blob2base64(image);
+    console.log(params);
+    return await axios.post(url, params);
+  }
+
   async function upload1() {
-    const url = '/api/v1/upload';
     try {
-      params.image = await blob2base64(blob);
-      console.log(params);
-      const res = await axios.post(url, params);
+      const res = await requestWithImage1('/api/v1/upload', params, blob);
       console.log(res.data);
     } catch(err) {
       console.log('upload1 error');
     }
   }
 
-  async function upload2() {
-    const url = '/api/v1/upload';
+  async function requestWithImage2(url, params, image) {
     const form = new FormData();
     form.append('params', JSON.stringify(params));
-    form.append('image', blob);
+    form.append('image', image);
+    return await axios.post(url, form);
+  }
 
+  async function upload2() {
     try {
-      const res = await axios.post(url, form);
+      const res = await requestWithImage2('/api/v1/upload', params, blob);
       console.log(res.data);
     } catch(err) {
       console.log('upload2 error');
@@ -113,5 +118,16 @@
     params.width = canvas.width;
     params.height = canvas.height;
   }
+
+  async function detect() {
+    try {
+      const res = await requestWithImage1('/api/v1/detect', params, blob);
+      console.log(res.data);
+    } catch(err) {
+      console.log('detect error');
+    }
+  }
+
+
 </script>
 </html>
