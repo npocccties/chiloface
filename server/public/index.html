@@ -15,8 +15,9 @@
   <button onclick="start()">撮影開始</button>
   <button onclick="registerFace()">登録</button>
   <button onclick="verify()">照合</button>
-  <br>
-  <br>
+  <br><br>
+  <textarea id="msgbox" rows=5 cols=80></textarea>
+  <br><br>
   <button onclick="capture()">capture</button>
   <button onclick="compress()">compress</button>
   <button onclick="upload1()">upload1</button>
@@ -28,6 +29,7 @@
   const rcanvas = document.getElementById('rcanvas');
   const vcanvas = document.getElementById('vcanvas');
   const ccanvas = document.getElementById('ccanvas');
+  const msgbox = document.getElementById('msgbox');
 
   let stream;
   let streamSettings;
@@ -148,12 +150,20 @@
   //
   // UI function
   //
+  const msgarray = [];
+
+  function message(num, msg) {
+    msgarray[num] = msg;
+    msgbox.value = msgarray.join('\n');
+  }
+
   async function registerFace() {
     await capture();
     await drawImage(blob,rcanvas);
     try {
       const res = await postWithImage1('/api/v1/faces', params, blob);
       console.log(res.data);
+      message(0, `登録画像 type:${params.type} width:${params.width} height:${params.height} size:${blob.size}`);
     } catch(err) {
       console.log('registerFace error');
     }
@@ -165,6 +175,9 @@
     try {
       const res = await postWithImage1('/api/v1/verify', params, blob);
       console.log(res.data);
+      message(1, `照合画像 type:${params.type} width:${params.width} height:${params.height} size:${blob.size}`);
+      const {isIdentical, confidence} = res.data;
+      message(2, `照合結果 ${isIdentical} 信頼度:${confidence}`);
     } catch(err) {
       console.log('verify error');
     }
