@@ -16,6 +16,16 @@
   <button onclick="registerFace()">登録</button>
   <button onclick="verify()">照合</button>
   <br><br>
+  圧縮後の画像サイズ:
+  <select id="sselect">
+    <option value="none">圧縮なし</option>
+    <option value="320x240">320x240</option>
+    <option value="240x180">240x180</option>
+    <option value="160x120">160x120</option>
+  </select>
+  圧縮率:
+  <input id="ctext" type="text" value="1.0">
+  <br><br>
   <textarea id="msgbox" rows=5 cols=80></textarea>
   <br><br>
   <button onclick="capture()">capture</button>
@@ -29,6 +39,8 @@
   const rcanvas = document.getElementById('rcanvas');
   const vcanvas = document.getElementById('vcanvas');
   const ccanvas = document.getElementById('ccanvas');
+  const sselect = document.getElementById('sselect');
+  const ctext = document.getElementById('ctext');
   const msgbox = document.getElementById('msgbox');
 
   let stream;
@@ -41,6 +53,7 @@
     width: 0,
     height: 0
   };
+  let doCompress = false;
 
   async function start() {
     try {
@@ -84,12 +97,35 @@
     blob = await new Promise(resolve => {
       ccanvas.toBlob(b => {
         resolve(b);
-      }, 'image/jpeg', 1.0);
+      }, 'image/jpeg', Number(ctext.value));
     });
     console.log(blob);
     params.type = blob.type;
     params.width = ccanvas.width;
     params.height = ccanvas.height;
+  }
+
+  function setCompress(w, h) {
+    doCompress = true;
+    ccanvas.width = w;
+    ccanvas.height = h;
+  }
+
+  sselect.onchange = function() {
+    switch(this.value){
+      case 'none':
+        doCompress = false;
+        return;
+      case '320x240':
+        setCompress(320, 240);
+        break;
+      case '240x180':
+        setCompress(240, 180);
+        break;
+      case '160x120':
+        setCompress(160, 120);
+        break;
+    }
   }
 
   //
@@ -160,6 +196,7 @@
   async function registerFace() {
     await capture();
     await drawImage(blob,rcanvas);
+    doCompress && compress();
     try {
       const res = await postWithImage1('/api/v1/faces', params, blob);
       console.log(res.data);
@@ -172,6 +209,7 @@
   async function verify() {
     await capture();
     await drawImage(blob,vcanvas);
+    doCompress && compress();
     try {
       const res = await postWithImage1('/api/v1/verify', params, blob);
       console.log(res.data);
