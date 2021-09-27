@@ -23,8 +23,10 @@
     <option value="240x180">240x180</option>
     <option value="160x120">160x120</option>
   </select>
-  圧縮率:
+  &nbsp;&nbsp;圧縮率:
   <input id="ctext" type="text" value="1.0">
+  &nbsp;&nbsp;グレースケール化:
+  <input id="gcheckbox" type="checkbox" value="grayscale">
   <br><br>
   <textarea id="msgbox" rows=5 cols=80></textarea>
   <br><br>
@@ -41,6 +43,7 @@
   const ccanvas = document.getElementById('ccanvas');
   const sselect = document.getElementById('sselect');
   const ctext = document.getElementById('ctext');
+  const gcheckbox = document.getElementById('gcheckbox');
   const msgbox = document.getElementById('msgbox');
 
   let stream;
@@ -89,6 +92,7 @@
   async function drawImage(blob,canvas){
     const bitmap = await createImageBitmap(blob);
     const ctx = canvas.getContext("2d");
+    gcheckbox.checked && (ctx.filter = 'grayscale(1)');
     ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   }
 
@@ -186,11 +190,14 @@
   //
   // UI function
   //
-  const msgarray = [];
+  const msgs = [];
 
   function message(num, msg) {
-    msgarray[num] = msg;
-    msgbox.value = msgarray.join('\n');
+    msgs[num] = msg;
+    if (num === 0) {
+      msgs[1] = msgs[2] = '';
+    }
+    msgbox.value = msgs.join('\n');
   }
 
   async function registerFace() {
