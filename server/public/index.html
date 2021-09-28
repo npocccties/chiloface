@@ -19,6 +19,8 @@
   圧縮後の画像サイズ:
   <select id="sselect">
     <option value="none">圧縮なし</option>
+    <option value="640x480">640x480</option>
+    <option value="480x360">480x360</option>
     <option value="320x240">320x240</option>
     <option value="240x180">240x180</option>
     <option value="160x120">160x120</option>
@@ -92,7 +94,11 @@
   async function drawImage(blob,canvas){
     const bitmap = await createImageBitmap(blob);
     const ctx = canvas.getContext("2d");
-    gcheckbox.checked && (ctx.filter = 'grayscale(1)');
+    if (gcheckbox.checked) {
+      ctx.filter = 'grayscale(1)';
+    } else {
+      ctx.filter = 'none';
+    }
     ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   }
 
@@ -120,6 +126,12 @@
       case 'none':
         doCompress = false;
         return;
+      case '640x480':
+        setCompress(640,480);
+        break;
+      case '480x360':
+        setCompress(480,360);
+        break;
       case '320x240':
         setCompress(320, 240);
         break;
@@ -202,8 +214,8 @@
 
   async function registerFace() {
     await capture();
+    doCompress && await compress();
     await drawImage(blob,rcanvas);
-    doCompress && compress();
     try {
       const res = await postWithImage1('/api/v1/faces', params, blob);
       console.log(res.data);
@@ -215,8 +227,8 @@
 
   async function verify() {
     await capture();
+    doCompress && await compress();
     await drawImage(blob,vcanvas);
-    doCompress && compress();
     try {
       const res = await postWithImage1('/api/v1/verify', params, blob);
       console.log(res.data);
