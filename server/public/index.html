@@ -32,12 +32,20 @@
   <br><br>
   <textarea id="msgbox" rows=5 cols=80></textarea>
   <br><br>
+  <!--
   <button onclick="capture()">capture</button>
   <button onclick="compress()">compress</button>
   <button onclick="upload1()">upload1</button>
   <button onclick="detect()">detect</button>
+  -->
 </body>
 
+<script type='module'>
+  import * as facelib from './facelib.js';
+  window.facelib = {
+    ...facelib,
+  };
+</script>
 <script>
   const video = document.getElementById('video');
   const rcanvas = document.getElementById('rcanvas');
