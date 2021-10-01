@@ -1,9 +1,28 @@
+const basicAuth = require('basic-auth')
 const azure = require('./azure.js');
 
-const user = {};
+const users = {};
+
+function find_user(name) {
+  let user = users[name];
+  if (typeof user === 'undefined') {
+    user = {};
+    users[name] = user;
+  }
+  return user;
+}
 
 function checkUser(req, res, next) {
-  req.user = user;
+  const credential = basicAuth(req);
+  console.log(credential);
+  if (typeof credential === 'undefined' || credential.name === '' ){
+    res.setHeader('WWW-Authenticate', 'Basic realm="tutorial"');
+    next({
+      statusCode: 401,
+      message: 'authenticaion error'
+    });
+  }
+  req.user = find_user(credential.name);
   next();
 }
 

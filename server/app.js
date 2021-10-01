@@ -25,6 +25,10 @@ app.use(face.checkUser);
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/v1', apiv1Router);
+app.use('/logout', function (req, res) {
+  res.setHeader('WWW-Authenticate', 'Basic realm="tutorial"');
+  res.sendStatus(401);
+});
 app.use(faceErrorHandler);
 
 module.exports = app;
