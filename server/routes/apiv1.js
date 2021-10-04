@@ -3,6 +3,9 @@ const router = express.Router();
 const fs = require('fs');
 const face = require('../lib/facemem.js');
 
+const OK200 = "OK";
+const ERROR500 = "Internal Server Error";
+
 // parse parameter
 const multer = require('multer');
 const storage = multer.memoryStorage();
@@ -24,19 +27,15 @@ router.use(function(req, res, next) {
   next();
 });
 
-// upload for test
-router.post('/upload', function(req, res, next) {
-  console.log(req.body);
-  fs.writeFileSync('upload.bin', req.body.image);
-  res.send();
-});
-
 // face detection
 router.post('/detect', async function(req, res, next) {
-  console.log(req.body);
-  const result = await face.detect(req);
-  console.log(result);
-  res.send(result);
+  try {
+    const result = await face.detect(req);
+    result.message = OK200;
+    res.send(result);
+  } catch(err) {
+    res.status(500).send({message: ERROR500});
+  }
 });
 
 // verify face

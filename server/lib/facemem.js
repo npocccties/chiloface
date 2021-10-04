@@ -27,7 +27,11 @@ function checkUser(req, res, next) {
 }
 
 async function detect(req) {
-  return await azure.DetectFace(req.body.image);
+  const result = await azure.DetectFace(req.body.image);
+  const faceRectangle = result.map(e => e.faceRectangle);
+  return {
+    faceRectangle,
+  }
 }
 
 async function verify(req) {

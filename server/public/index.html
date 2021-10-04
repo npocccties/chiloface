@@ -33,12 +33,7 @@
   <textarea id="msgbox" rows=5 cols=80></textarea>
   <br><br>
   <a href="/logout">ログアウト</a>
-  <!--
-  <button onclick="capture()">capture</button>
-  <button onclick="compress()">compress</button>
-  <button onclick="upload1()">upload1</button>
   <button onclick="detect()">detect</button>
-  -->
 </body>
 
 <script type='module'>
@@ -179,36 +174,6 @@
   }
 
   //
-  // API call
-  //
-  async function upload1() {
-    try {
-      const res = await postWithImage1('/api/v1/upload', params, blob);
-      console.log(res.data);
-    } catch(err) {
-      console.log('upload1 error');
-    }
-  }
-
-  async function upload2() {
-    try {
-      const res = await postWithImage2('/api/v1/upload', params, blob);
-      console.log(res.data);
-    } catch(err) {
-      console.log('upload2 error');
-    }
-  }
-
-  async function detect() {
-    try {
-      const res = await postWithImage1('/api/v1/detect', params, blob);
-      console.log(res.data);
-    } catch(err) {
-      console.log('detect error');
-    }
-  }
-
-  //
   // UI function
   //
   const msgs = [];
@@ -246,6 +211,16 @@
       message(2, `照合結果 ${isIdentical} 信頼度:${confidence}`);
     } catch(err) {
       console.log('verify error');
+    }
+  }
+
+  async function detect() {
+    await capture();
+    try {
+      const res = await postWithImage1('/api/v1/detect', params, blob);
+      console.log(res.data);
+    } catch(err) {
+      console.log('detect error');
     }
   }
 
