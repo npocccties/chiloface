@@ -27,17 +27,17 @@ function checkUser(req, res, next) {
 }
 
 async function detect(req) {
-  const result = await azure.DetectFace(req.body.image);
-  const faceRectangle = result.map(e => e.faceRectangle);
-  return {
-    faceRectangle,
-  }
+  return await azure.DetectFace(req.body.image);
 }
 
-async function verify(req) {
-  const target = await azure.DetectFace(req.body.image);
-  console.log(target);
-  return await azure.VerifyFaceToFace(req.user.face.faceId, target[0].faceId);
+async function verify(req, faceId) {
+  let faceId1;
+  try {
+    faceId1 = req.user.face.faceId;
+  } catch(err) {
+    return null;
+  }
+  return await azure.VerifyFaceToFace(req.user.face.faceId, faceId);
 }
 
 async function registerFace(req) {

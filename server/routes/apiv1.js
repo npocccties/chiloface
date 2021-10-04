@@ -4,6 +4,8 @@ const fs = require('fs');
 const face = require('../lib/facemem.js');
 
 const OK200 = "OK";
+const ERROR400 = "detect face error";
+const ERROR404 = "face not registered";
 const ERROR500 = "Internal Server Error";
 
 // parse parameter
@@ -31,8 +33,11 @@ router.use(function(req, res, next) {
 router.post('/detect', async function(req, res, next) {
   try {
     const result = await face.detect(req);
-    result.message = OK200;
-    res.send(result);
+    const faceRectangle = result.map(e => e.faceRectangle);
+    res.send({
+      message: OK200,
+      faceRectangle,
+    });
   } catch(err) {
     res.status(500).send({message: ERROR500});
   }
@@ -40,10 +45,22 @@ router.post('/detect', async function(req, res, next) {
 
 // verify face
 router.post('/verify', async function(req, res, next) {
-  console.log(req.body);
-  const result = await face.verify(req);
-  console.log(result);
-  res.send(result);
+  try {
+    const dresult = await face.detect(req);
+    if (dresult.length < 1) {
+      res.status(400).send({message: ERROR400});
+      return;
+    }
+    const result = await face.verify(req, dresult[0].faceId);
+    if (result === null) {
+      res.status(404).send({message: ERROR404});
+    } else {
+      res.send(result);
+    }
+  } catch(err) {
+    console.log(err);
+    res.status(500).send({message: ERROR500});
+  }
 });
 
 // register face
