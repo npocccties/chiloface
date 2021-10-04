@@ -13,6 +13,7 @@
   <canvas id="ccanvas" width="320" height="240" style='display:none'></canvas>
   <br>
   <button onclick="start()">撮影開始</button>
+  <button onclick="detect()">検出</button>
   <button onclick="registerFace()">登録</button>
   <button onclick="verify()">照合</button>
   <br><br>
@@ -33,7 +34,6 @@
   <textarea id="msgbox" rows=5 cols=80></textarea>
   <br><br>
   <a href="/logout">ログアウト</a>
-  <button onclick="detect()">detect</button>
 </body>
 
 <script type='module'>
@@ -186,6 +186,19 @@
     msgbox.value = msgs.join('\n');
   }
 
+  async function detect() {
+    await capture();
+    doCompress && await compress();
+    await drawImage(blob,rcanvas);
+    try {
+      const res = await postWithImage1('/api/v1/detect', params, blob);
+      console.log(res.data);
+      message(0, `検出結果 ${JSON.stringify(res.data.faceRectangle)}`);
+    } catch(err) {
+      console.log('detect error');
+    }
+  }
+
   async function registerFace() {
     await capture();
     doCompress && await compress();
@@ -213,16 +226,5 @@
       console.log('verify error');
     }
   }
-
-  async function detect() {
-    await capture();
-    try {
-      const res = await postWithImage1('/api/v1/detect', params, blob);
-      console.log(res.data);
-    } catch(err) {
-      console.log('detect error');
-    }
-  }
-
 </script>
 </html>
