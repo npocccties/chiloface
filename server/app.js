@@ -17,7 +17,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api/v1', apiv1.router);
 app.use('/logout', function (req, res) {
-  res.setHeader('WWW-Authenticate', 'Basic realm="tutorial"');
   res.sendStatus(401);
 });
 app.use(apiv1.errorHandler);

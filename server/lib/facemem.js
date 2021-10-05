@@ -20,9 +20,10 @@ function checkUser(req, res, next) {
       statusCode: 401,
       message: 'authentication error'
     });
+  } else {
+    req.user = findUser(credential.name);
+    next();
   }
-  req.user = findUser(credential.name);
-  next();
 }
 
 async function detect(req) {

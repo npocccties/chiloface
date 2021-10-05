@@ -33,7 +33,7 @@
   <br><br>
   <textarea id="msgbox" rows=5 cols=80></textarea>
   <br><br>
-  <a href="/logout">ログアウト</a>
+  <button onclick="logout()">ログアウト</button>
 </body>
 
 <script type='module'>
@@ -225,6 +225,14 @@
     } catch(err) {
       console.log('verify error');
     }
+  }
+
+  function logout() {
+    axios.get('/logout').then((res) => {
+      console.log('never reached');
+    }).catch((err) => {
+      location.reload();
+    });
   }
 </script>
 </html>
