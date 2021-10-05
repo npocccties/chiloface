@@ -3,7 +3,7 @@ const azure = require('./azure.js');
 
 const users = {};
 
-function find_user(name) {
+function findUser(name) {
   let user = users[name];
   if (typeof user === 'undefined') {
     user = {};
@@ -22,7 +22,7 @@ function checkUser(req, res, next) {
       message: 'authenticaion error'
     });
   }
-  req.user = find_user(credential.name);
+  req.user = findUser(credential.name);
   next();
 }
 
