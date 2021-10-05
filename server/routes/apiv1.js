@@ -86,4 +86,19 @@ router.post('/faces', async function(req, res, next) {
   }
 });
 
-module.exports = router;
+function errorHandler (err, req, res, next) {
+  if (res.headersSent) {
+    return next(err)
+  }
+  try {
+    res.setHeader('content-type', "text/plain");
+    res.status(err.statusCode).send(err.message);
+  } catch(err) {
+    next(err);
+  }
+}
+
+module.exports = {
+  router,
+  errorHandler,
+};
