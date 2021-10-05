@@ -19,7 +19,7 @@ function checkUser(req, res, next) {
     res.setHeader('WWW-Authenticate', 'Basic realm="tutorial"');
     next({
       statusCode: 401,
-      message: 'authenticaion error'
+      message: 'authentication error'
     });
   }
   req.user = findUser(credential.name);
