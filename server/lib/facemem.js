@@ -14,7 +14,6 @@ function findUser(name) {
 
 function checkUser(req, res, next) {
   const credential = basicAuth(req);
-  console.log(credential);
   if (typeof credential === 'undefined' || credential.name === '' ){
     res.setHeader('WWW-Authenticate', 'Basic realm="tutorial"');
     next({
