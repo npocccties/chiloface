@@ -31,10 +31,8 @@ async function detect(req) {
 }
 
 async function verify(req, faceId) {
-  let faceId1;
-  try {
-    faceId1 = req.user.face.faceId;
-  } catch(err) {
+  const faceId1 = req.user.face?.faceId;
+  if (typeof faceId1 === 'undefined') {
     return null;
   }
   return await azure.VerifyFaceToFace(req.user.face.faceId, faceId);
