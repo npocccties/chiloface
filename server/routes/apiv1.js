@@ -3,10 +3,8 @@ const router = express.Router();
 const fs = require('fs');
 const face = require('../lib/facemem.js');
 
-const OK200 = "OK";
-const ERROR400 = "detect face error";
+const ERROR400 = "cannot detect face";
 const ERROR404 = "face not registered";
-const ERROR500 = "Internal Server Error";
 
 // parse parameter
 const multer = require('multer');
@@ -15,6 +13,12 @@ const upload = multer({ storage: storage });
 
 router.use(upload.single('image'));
 
+function newError(code, message) {
+  const ret = new Error(message);
+  ret.statusCode = code;
+  return ret;
+}
+
 router.use(function(req, res, next) {
   if (req.get('content-type') === 'application/json') {
     req.body.image = Buffer.from(req.body.image, 'base64');
@@ -22,9 +26,7 @@ router.use(function(req, res, next) {
     req.body = JSON.parse(req.body.params);
     req.body.image = req.file.buffer;
   } else {
-    const err = new Error('invalid request');
-    err.statusCode = 400;
-    next(err);
+    return next(newError(400,'invalid request'));
   }
   next();
 });
@@ -35,11 +37,11 @@ router.post('/detect', async function(req, res, next) {
     const dresult = await face.detect(req);
     const faceRectangle = dresult.map(e => e.faceRectangle);
     res.send({
-      message: OK200,
       faceRectangle,
     });
   } catch(err) {
-    res.status(500).send({message: ERROR500});
+    err.statusCode = 500;
+    next(err);
   }
 });
 
@@ -49,12 +51,11 @@ router.post('/verify', async function(req, res, next) {
     const dresult = await face.detect(req);
     const faceRectangle = dresult.map(e => e.faceRectangle);
     if (dresult.length < 1) {
-      res.status(400).send({message: ERROR400});
-      return;
+      return next(newError(400,ERROR400));
     }
     const result = await face.verify(req, dresult[0].faceId);
     if (result === null) {
-      res.status(404).send({message: ERROR404});
+      next(newError(404,ERROR404));
     } else {
       res.send({
         ...result,
@@ -62,8 +63,8 @@ router.post('/verify', async function(req, res, next) {
       });
     }
   } catch(err) {
-    console.log(err);
-    res.status(500).send({message: ERROR500});
+    err.statusCode = 500;
+    next(err);
   }
 });
 
@@ -73,16 +74,15 @@ router.post('/faces', async function(req, res, next) {
     const dresult = await face.detect(req);
     const faceRectangle = dresult.map(e => e.faceRectangle);
     if (dresult.length < 1) {
-      res.status(400).send({message: ERROR400});
-      return;
+      return next(newError(400,ERROR400));
     }
     face.registerFace(req, dresult[0].faceId);
     res.send({
       faceRectangle,
     });
   } catch(err) {
-    console.log(err);
-    res.status(500).send({message: ERROR500});
+    err.statusCode = 500;
+    next(err);
   }
 });
 
