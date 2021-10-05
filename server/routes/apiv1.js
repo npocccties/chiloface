@@ -77,7 +77,7 @@ router.post('/faces', async function(req, res, next) {
       return next(newError(400,ERROR400));
     }
     face.registerFace(req, dresult[0].faceId);
-    res.send({
+    res.status(201).send({
       faceRectangle,
     });
   } catch(err) {
