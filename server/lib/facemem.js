@@ -40,17 +40,12 @@ async function verify(req, faceId) {
   return await azure.VerifyFaceToFace(req.user.face.faceId, faceId);
 }
 
-async function registerFace(req) {
-  const image = req.body.image;
-  const result = await azure.DetectFace(image);
-  const faceId = result[0].faceId;
+function registerFace(req, faceId) {
+  const {image} = req.body;
   req.user.face = {
     image,
     faceId,
   };
-  return {
-    faceId
-  }
 }
 
 module.exports = {

@@ -32,8 +32,8 @@ router.use(function(req, res, next) {
 // face detection
 router.post('/detect', async function(req, res, next) {
   try {
-    const result = await face.detect(req);
-    const faceRectangle = result.map(e => e.faceRectangle);
+    const dresult = await face.detect(req);
+    const faceRectangle = dresult.map(e => e.faceRectangle);
     res.send({
       message: OK200,
       faceRectangle,
@@ -47,6 +47,7 @@ router.post('/detect', async function(req, res, next) {
 router.post('/verify', async function(req, res, next) {
   try {
     const dresult = await face.detect(req);
+    const faceRectangle = dresult.map(e => e.faceRectangle);
     if (dresult.length < 1) {
       res.status(400).send({message: ERROR400});
       return;
@@ -55,7 +56,10 @@ router.post('/verify', async function(req, res, next) {
     if (result === null) {
       res.status(404).send({message: ERROR404});
     } else {
-      res.send(result);
+      res.send({
+        ...result,
+        faceRectangle,
+      });
     }
   } catch(err) {
     console.log(err);
@@ -65,10 +69,21 @@ router.post('/verify', async function(req, res, next) {
 
 // register face
 router.post('/faces', async function(req, res, next) {
-  console.log(req.body);
-  const result = await face.registerFace(req);
-  console.log(result);
-  res.send(result);
+  try {
+    const dresult = await face.detect(req);
+    const faceRectangle = dresult.map(e => e.faceRectangle);
+    if (dresult.length < 1) {
+      res.status(400).send({message: ERROR400});
+      return;
+    }
+    face.registerFace(req, dresult[0].faceId);
+    res.send({
+      faceRectangle,
+    });
+  } catch(err) {
+    console.log(err);
+    res.status(500).send({message: ERROR500});
+  }
 });
 
 module.exports = router;
