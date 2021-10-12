@@ -20,7 +20,7 @@ function newError(code, message) {
   return ret;
 }
 
-router.use(function(req, res, next) {
+function parseParam(req, res, next) {
   if (req.get('content-type') === 'application/json') {
     req.body.image = Buffer.from(req.body.image, 'base64');
   } else if (req.file) {
@@ -29,8 +29,7 @@ router.use(function(req, res, next) {
   } else {
     return next(newError(400,'invalid request'));
   }
-  next();
-});
+}
 
 // check user
 function checkUser(req, res, next) {
@@ -50,6 +49,7 @@ function checkUser(req, res, next) {
 // face detection
 router.post('/detect', async function(req, res, next) {
   try {
+    parseParam(req, res, next);
     const dresult = await face.detect(req.body.image);
     const faceRectangle = dresult.map(e => e.faceRectangle);
     res.send({
@@ -64,6 +64,7 @@ router.post('/detect', async function(req, res, next) {
 // verify face
 router.post('/verify', async function(req, res, next) {
   try {
+    parseParam(req, res, next);
     const dresult = await face.detect(req.body.image);
     const faceRectangle = dresult.map(e => e.faceRectangle);
     if (dresult.length < 1) {
@@ -87,6 +88,7 @@ router.post('/verify', async function(req, res, next) {
 // register face
 router.post('/faces', async function(req, res, next) {
   try {
+    parseParam(req, res, next);
     const dresult = await face.detect(req.body.image);
     const faceRectangle = dresult.map(e => e.faceRectangle);
     if (dresult.length < 1) {
@@ -96,6 +98,16 @@ router.post('/faces', async function(req, res, next) {
     res.status(201).send({
       faceRectangle,
     });
+  } catch(err) {
+    err.statusCode = 500;
+    next(err);
+  }
+});
+
+router.get('/user', async function(req, res, next) {
+  try {
+    const result = await face.getUserInfo(req.user);
+    res.send(result);
   } catch(err) {
     err.statusCode = 500;
     next(err);

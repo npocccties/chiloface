@@ -234,5 +234,15 @@
       location.reload();
     });
   }
+
+  window.onload = async function (){
+    console.log("window.onload");
+    try {
+      const res = await axios.get('/api/v1/user');
+      console.log(res.data);
+    } catch(err) {
+      console.log(err);
+    }
+  }
 </script>
 </html>

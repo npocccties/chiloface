@@ -32,9 +32,17 @@ function registerFace(user, image, face) {
   };
 }
 
+function getUserInfo(user) {
+  return {
+    registered: (typeof user.face !== 'undefined'),
+    allow_registration: true,
+  };
+}
+
 module.exports = {
   findUser,
   detect,
   verify,
   registerFace,
-}
+  getUserInfo,
+};
