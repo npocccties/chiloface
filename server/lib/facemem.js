@@ -11,21 +11,22 @@ function findUser(name) {
   return user;
 }
 
-async function detect(req) {
-  return await azure.DetectFace(req.body.image);
+async function detect(image) {
+  return await azure.DetectFace(image);
 }
 
-async function verify(req, faceId) {
-  const faceId1 = req.user.face?.faceId;
+async function verify(user, _, face) {
+  const faceId1 = user.face?.faceId;
+  const faceId2 = face.faceId;
   if (typeof faceId1 === 'undefined') {
     return null;
   }
-  return await azure.VerifyFaceToFace(req.user.face.faceId, faceId);
+  return await azure.VerifyFaceToFace(faceId1, faceId2);
 }
 
-function registerFace(req, faceId) {
-  const {image} = req.body;
-  req.user.face = {
+function registerFace(user, image, face) {
+  const {faceId} = face;
+  user.face = {
     image,
     faceId,
   };

@@ -50,7 +50,7 @@ function checkUser(req, res, next) {
 // face detection
 router.post('/detect', async function(req, res, next) {
   try {
-    const dresult = await face.detect(req);
+    const dresult = await face.detect(req.body.image);
     const faceRectangle = dresult.map(e => e.faceRectangle);
     res.send({
       faceRectangle,
@@ -64,12 +64,12 @@ router.post('/detect', async function(req, res, next) {
 // verify face
 router.post('/verify', async function(req, res, next) {
   try {
-    const dresult = await face.detect(req);
+    const dresult = await face.detect(req.body.image);
     const faceRectangle = dresult.map(e => e.faceRectangle);
     if (dresult.length < 1) {
       return next(newError(400,ERROR400));
     }
-    const result = await face.verify(req, dresult[0].faceId);
+    const result = await face.verify(req.user, req.body.image, dresult[0]);
     if (result === null) {
       next(newError(404,ERROR404));
     } else {
@@ -87,12 +87,12 @@ router.post('/verify', async function(req, res, next) {
 // register face
 router.post('/faces', async function(req, res, next) {
   try {
-    const dresult = await face.detect(req);
+    const dresult = await face.detect(req.body.image);
     const faceRectangle = dresult.map(e => e.faceRectangle);
     if (dresult.length < 1) {
       return next(newError(400,ERROR400));
     }
-    face.registerFace(req, dresult[0].faceId);
+    face.registerFace(req.user, req.body.image, dresult[0]);
     res.status(201).send({
       faceRectangle,
     });
