@@ -195,6 +195,7 @@
       console.log(res.data);
       message(0, `検出結果 ${JSON.stringify(res.data.faceRectangle)}`);
     } catch(err) {
+      message(0, `検出エラー code:${err.response.status} ${err.response.data}`);
       console.log('detect error');
     }
   }
@@ -208,6 +209,7 @@
       console.log(res.data);
       message(0, `登録画像 type:${params.type} width:${params.width} height:${params.height} size:${blob.size}`);
     } catch(err) {
+      message(0, `登録エラー code:${err.response.status} ${err.response.data}`);
       console.log('registerFace error');
     }
   }
@@ -223,6 +225,7 @@
       const {isIdentical, confidence} = res.data;
       message(2, `照合結果 ${isIdentical} 信頼度:${confidence}`);
     } catch(err) {
+      message(2, `照合エラー code:${err.response.status} ${err.response.data}`);
       console.log('verify error');
     }
   }
