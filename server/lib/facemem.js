@@ -1,4 +1,3 @@
-const basicAuth = require('basic-auth')
 const azure = require('./azure.js');
 
 const users = {};
@@ -10,20 +9,6 @@ function findUser(name) {
     users[name] = user;
   }
   return user;
-}
-
-function checkUser(req, res, next) {
-  const credential = basicAuth(req);
-  if (typeof credential === 'undefined' || credential.name === '' ){
-    res.setHeader('WWW-Authenticate', 'Basic realm="tutorial"');
-    next({
-      statusCode: 401,
-      message: 'authentication error'
-    });
-  } else {
-    req.user = findUser(credential.name);
-    next();
-  }
 }
 
 async function detect(req) {
@@ -47,7 +32,7 @@ function registerFace(req, faceId) {
 }
 
 module.exports = {
-  checkUser,
+  findUser,
   detect,
   verify,
   registerFace,

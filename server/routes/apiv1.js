@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const fs = require('fs');
+const basicAuth = require('basic-auth')
 const face = require('../lib/facemem.js');
 
 const ERROR400 = "cannot detect face";
@@ -30,6 +31,21 @@ router.use(function(req, res, next) {
   }
   next();
 });
+
+// check user
+function checkUser(req, res, next) {
+  const credential = basicAuth(req);
+  if (typeof credential === 'undefined' || credential.name === '' ){
+    res.setHeader('WWW-Authenticate', 'Basic realm="tutorial"');
+    next({
+      statusCode: 401,
+      message: 'authentication error'
+    });
+  } else {
+    req.user = face.findUser(credential.name);
+    next();
+  }
+}
 
 // face detection
 router.post('/detect', async function(req, res, next) {
@@ -99,6 +115,7 @@ function errorHandler (err, req, res, next) {
 }
 
 module.exports = {
+  checkUser,
   router,
   errorHandler,
 };
