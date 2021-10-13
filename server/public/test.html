@@ -43,101 +43,6 @@
   };
 </script>
 <script>
-  let stream;
-  let streamSettings;
-  let track;
-  let ic;
-
-  async function init() {
-    try {
-      const constraints = {
-        audio: false,
-        video: true
-      };
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-      track = stream.getVideoTracks()[0];
-      streamSettings = track.getSettings();
-      console.log(streamSettings);
-      ic = new ImageCapture(track);
-      icc = await ic.getPhotoCapabilities();
-      return stream;
-　　} catch(err) {
-      console.log('init error');
-      throw err;
-　　}
-  }
-
-  async function capture() {
-    try {
-      const blob = await ic.takePhoto();
-      return {
-        blob,
-        params: {
-          type: blob.type,
-          width: streamSettings.width,
-          height: streamSettings.height,
-        },
-      };
-    } catch(err) {
-      console.log('capture error');
-      throw err;
-    }
-  }
-
-  async function drawImage(blob, canvas, grayscale = false){
-    const bitmap = await createImageBitmap(blob);
-    const ctx = canvas.getContext("2d");
-    if (grayscale) {
-      ctx.filter = 'grayscale(1)';
-    } else {
-      ctx.filter = 'none';
-    }
-    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  }
-
-  async function compress(oblob, option) {
-    const {canvas, width, height} = option;
-    canvas.width = width;
-    canvas.height = height;
-    await drawImage(oblob, canvas, option.grayscale);
-    const blob = await new Promise(resolve => {
-      canvas.toBlob(b => {
-        resolve(b);
-      }, option.type, option.quality);
-    });
-    return {
-      blob,
-      params: {
-        type: blob.type,
-        width: canvas.width,
-        height: canvas.height,
-      },
-    }
-  }
-
-  async function blob2base64(blob) {
-    const ab = await blob.arrayBuffer();
-    const uia = new Uint8Array(ab);
-    const str = uia.reduce((data, byte) => {
-      return data + String.fromCharCode(byte);
-    }, '')
-    return btoa(str);
-  }
-
-  async function postWithImageJSON(url, params, image) {
-    params.image = await blob2base64(image);
-    return await axios.post(url, params);
-  }
-
-  async function postWithImageMulti(url, params, image) {
-    const form = new FormData();
-    form.append('params', JSON.stringify(params));
-    form.append('image', image);
-    return await axios.post(url, form);
-  }
-
-  const postWithImage = postWithImageJSON;
-
   //
   // UI function
   //
@@ -162,7 +67,7 @@
 
   async function start() {
     try {
-      const stream = await init(ccanvas);
+      const stream = await facelib.init(ccanvas);
       video.srcObject = stream;
     } catch(err) {
       console.log('start error');
@@ -212,20 +117,20 @@
   }
 
   async function captureImage() {
-    let res = await capture();
+    let res = await facelib.capture();
     if (doCompress) {
       option.quality = Number(ctext.value);
       option.grayscale = gcheckbox.checked;
-      res = await compress(res.blob, option);
+      res = await facelib.compress(res.blob, option);
     }
     return res;
   }
 
   async function detect() {
     const {params, blob} = await captureImage();
-    await drawImage(blob, rcanvas);
+    await facelib.drawImage(blob, rcanvas);
     try {
-      const res = await postWithImage('/api/v1/detect', params, blob);
+      const res = await facelib.postWithImage('/api/v1/detect', params, blob);
       console.log(res.data);
       message(0, `検出結果 ${JSON.stringify(res.data.faceRectangle)}`);
     } catch(err) {
@@ -236,9 +141,9 @@
 
   async function registerFace() {
     const {params, blob} = await captureImage();
-    await drawImage(blob, rcanvas);
+    await facelib.drawImage(blob, rcanvas);
     try {
-      const res = await postWithImage('/api/v1/faces', params, blob);
+      const res = await facelib.postWithImage('/api/v1/faces', params, blob);
       console.log(res.data);
       message(0, `登録画像 type:${params.type} width:${params.width} height:${params.height} size:${blob.size}`);
     } catch(err) {
@@ -249,9 +154,9 @@
 
   async function verify() {
     const {params, blob} = await captureImage();
-    await drawImage(blob, vcanvas);
+    await facelib.drawImage(blob, vcanvas);
     try {
-      const res = await postWithImage('/api/v1/verify', params, blob);
+      const res = await facelib.postWithImage('/api/v1/verify', params, blob);
       console.log(res.data);
       message(1, `照合画像 type:${params.type} width:${params.width} height:${params.height} size:${blob.size}`);
       const {isIdentical, confidence} = res.data;
