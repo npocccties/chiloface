@@ -43,28 +43,12 @@
   };
 </script>
 <script>
-  const video = document.getElementById('video');
-  const rcanvas = document.getElementById('rcanvas');
-  const vcanvas = document.getElementById('vcanvas');
-  const ccanvas = document.getElementById('ccanvas');
-  const sselect = document.getElementById('sselect');
-  const ctext = document.getElementById('ctext');
-  const gcheckbox = document.getElementById('gcheckbox');
-  const msgbox = document.getElementById('msgbox');
-
   let stream;
   let streamSettings;
   let track;
   let ic;
-  let blob;
-  const params = {
-    type: '',
-    width: 0,
-    height: 0
-  };
-  let doCompress = false;
 
-  async function start() {
+  async function init() {
     try {
       const constraints = {
         audio: false,
@@ -76,29 +60,34 @@
       console.log(streamSettings);
       ic = new ImageCapture(track);
       icc = await ic.getPhotoCapabilities();
-      console.log(icc);
-      video.srcObject = stream;
+      return stream;
 　　} catch(err) {
-      console.log('start error');
+      console.log('init error');
+      throw err;
 　　}
   }
 
   async function capture() {
     try {
-      blob = await ic.takePhoto();
-      console.log(blob);
-      params.type = blob.type;
-      params.width = streamSettings.width;
-      params.height = streamSettings.height;
+      const blob = await ic.takePhoto();
+      return {
+        blob,
+        params: {
+          type: blob.type,
+          width: streamSettings.width,
+          height: streamSettings.height,
+        },
+      };
     } catch(err) {
       console.log('capture error');
+      throw err;
     }
   }
 
-  async function drawImage(blob,canvas){
+  async function drawImage(blob, canvas, grayscale = false){
     const bitmap = await createImageBitmap(blob);
     const ctx = canvas.getContext("2d");
-    if (gcheckbox.checked) {
+    if (grayscale) {
       ctx.filter = 'grayscale(1)';
     } else {
       ctx.filter = 'none';
@@ -106,23 +95,97 @@
     ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   }
 
-  async function compress() {
-    await drawImage(blob, ccanvas);
-    blob = await new Promise(resolve => {
-      ccanvas.toBlob(b => {
+  async function compress(oblob, option) {
+    const {canvas, width, height} = option;
+    canvas.width = width;
+    canvas.height = height;
+    await drawImage(oblob, canvas, option.grayscale);
+    const blob = await new Promise(resolve => {
+      canvas.toBlob(b => {
         resolve(b);
-      }, 'image/jpeg', Number(ctext.value));
+      }, option.type, option.quality);
     });
-    console.log(blob);
-    params.type = blob.type;
-    params.width = ccanvas.width;
-    params.height = ccanvas.height;
+    return {
+      blob,
+      params: {
+        type: blob.type,
+        width: canvas.width,
+        height: canvas.height,
+      },
+    }
   }
 
+  async function blob2base64(blob) {
+    const ab = await blob.arrayBuffer();
+    const uia = new Uint8Array(ab);
+    const str = uia.reduce((data, byte) => {
+      return data + String.fromCharCode(byte);
+    }, '')
+    return btoa(str);
+  }
+
+  async function postWithImageJSON(url, params, image) {
+    params.image = await blob2base64(image);
+    return await axios.post(url, params);
+  }
+
+  async function postWithImageMulti(url, params, image) {
+    const form = new FormData();
+    form.append('params', JSON.stringify(params));
+    form.append('image', image);
+    return await axios.post(url, form);
+  }
+
+  const postWithImage = postWithImageJSON;
+
+  //
+  // UI function
+  //
+  const video = document.getElementById('video');
+  const rcanvas = document.getElementById('rcanvas');
+  const vcanvas = document.getElementById('vcanvas');
+  const ccanvas = document.getElementById('ccanvas');
+  const sselect = document.getElementById('sselect');
+  const ctext = document.getElementById('ctext');
+  const gcheckbox = document.getElementById('gcheckbox');
+  const msgbox = document.getElementById('msgbox');
+
+  const msgs = [];
+
+  function message(num, msg) {
+    msgs[num] = msg;
+    if (num === 0) {
+      msgs[1] = msgs[2] = '';
+    }
+    msgbox.value = msgs.join('\n');
+  }
+
+  async function start() {
+    try {
+      const stream = await init(ccanvas);
+      video.srcObject = stream;
+    } catch(err) {
+      console.log('start error');
+      console.log(err);
+    }
+  }
+
+  // compress settings
+  let doCompress = false;
+
+  const option = {
+    canvas: ccanvas,
+    type: 'image/jpeg',
+    width: 0,
+    height: 0,
+    quality: 1.0,
+    grayscale: false,
+  };
+  
   function setCompress(w, h) {
     doCompress = true;
-    ccanvas.width = w;
-    ccanvas.height = h;
+    option.width = w;
+    option.height = h;
   }
 
   sselect.onchange = function() {
@@ -148,50 +211,21 @@
     }
   }
 
-  //
-  // API common
-  //
-  async function blob2base64(blob) {
-    const ab = await blob.arrayBuffer();
-    const uia = new Uint8Array(ab);
-    const str = uia.reduce((data, byte) => {
-      return data + String.fromCharCode(byte);
-    }, '')
-    return btoa(str);
-  }
-
-  async function postWithImage1(url, params, image) {
-    params.image = await blob2base64(image);
-    console.log(params);
-    return await axios.post(url, params);
-  }
-
-  async function postWithImage2(url, params, image) {
-    const form = new FormData();
-    form.append('params', JSON.stringify(params));
-    form.append('image', image);
-    return await axios.post(url, form);
-  }
-
-  //
-  // UI function
-  //
-  const msgs = [];
-
-  function message(num, msg) {
-    msgs[num] = msg;
-    if (num === 0) {
-      msgs[1] = msgs[2] = '';
+  async function captureImage() {
+    let res = await capture();
+    if (doCompress) {
+      option.quality = Number(ctext.value);
+      option.grayscale = gcheckbox.checked;
+      res = await compress(res.blob, option);
     }
-    msgbox.value = msgs.join('\n');
+    return res;
   }
 
   async function detect() {
-    await capture();
-    doCompress && await compress();
-    await drawImage(blob,rcanvas);
+    const {params, blob} = await captureImage();
+    await drawImage(blob, rcanvas);
     try {
-      const res = await postWithImage1('/api/v1/detect', params, blob);
+      const res = await postWithImage('/api/v1/detect', params, blob);
       console.log(res.data);
       message(0, `検出結果 ${JSON.stringify(res.data.faceRectangle)}`);
     } catch(err) {
@@ -201,11 +235,10 @@
   }
 
   async function registerFace() {
-    await capture();
-    doCompress && await compress();
-    await drawImage(blob,rcanvas);
+    const {params, blob} = await captureImage();
+    await drawImage(blob, rcanvas);
     try {
-      const res = await postWithImage1('/api/v1/faces', params, blob);
+      const res = await postWithImage('/api/v1/faces', params, blob);
       console.log(res.data);
       message(0, `登録画像 type:${params.type} width:${params.width} height:${params.height} size:${blob.size}`);
     } catch(err) {
@@ -215,11 +248,10 @@
   }
 
   async function verify() {
-    await capture();
-    doCompress && await compress();
-    await drawImage(blob,vcanvas);
+    const {params, blob} = await captureImage();
+    await drawImage(blob, vcanvas);
     try {
-      const res = await postWithImage1('/api/v1/verify', params, blob);
+      const res = await postWithImage('/api/v1/verify', params, blob);
       console.log(res.data);
       message(1, `照合画像 type:${params.type} width:${params.width} height:${params.height} size:${blob.size}`);
       const {isIdentical, confidence} = res.data;
