@@ -67,7 +67,7 @@
 
   async function start() {
     try {
-      const stream = await facelib.init(ccanvas);
+      const stream = await facelib.init();
       video.srcObject = stream;
     } catch(err) {
       console.log('start error');
