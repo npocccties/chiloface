@@ -1,0 +1,201 @@
+<html>
+
+<head>
+  <title>Express</title>
+  <link rel="stylesheet" href="/stylesheets/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+
+<body>
+  <video id="video" autoplay width="320" height="240"></video>
+  <canvas id="rcanvas" width="320" height="240"></canvas>
+  <canvas id="ccanvas" width="320" height="240" style='display:none'></canvas>
+  <br>
+  <button id="start" onclick="start()">撮影開始</button>
+  <button id="detect"onclick="detect()" disabled>顔検出</button>
+  <button id="register" onclick="register()" disabled>登録</button>
+  <button id="verify" onclick="verify()" disabled>照合</button>
+  <br><br>
+  <textarea id="msgbox" rows=5 cols=80></textarea>
+  <br><br>
+  <textarea id="debug_msgbox" rows=5 cols=80 style='display:none'></textarea>
+  <br><br>
+</body>
+
+<script type='module'>
+  import * as facelib from './facelib.js';
+  window.facelib = {
+    ...facelib,
+  };
+</script>
+<script>
+  const show_debug_msg = true;
+
+  const video = document.getElementById('video');
+  const rcanvas = document.getElementById('rcanvas');
+  const ccanvas = document.getElementById('ccanvas');
+  const start_button = document.getElementById('start');
+  const detect_button = document.getElementById('detect');
+  const register_button = document.getElementById('register');
+  const verify_button = document.getElementById('verify');
+  const msgbox = document.getElementById('msgbox');
+  const debug_msgbox = document.getElementById('debug_msgbox');
+
+  const msgs = [];
+
+  function message(num, msg) {
+    msgs[num] = msg;
+    if (num === 0) {
+      msgs[1] = msgs[2] = '';
+    }
+    msgbox.value = msgs.join('\n');
+  }
+
+  function debug(msg) {
+    if (show_debug_msg) {
+      debug_msgbox.style.display = 'block';
+      debug_msgbox.value = msg;
+    } else {
+      console.log(msg);
+    }
+  }
+
+  function disable_button(btn) {
+    btn.disabled = true;
+  }
+
+  function enable_button(btn) {
+    btn.disabled = false;
+  }
+
+  const option = {
+    canvas: ccanvas,
+    type: 'image/jpeg',
+    width: 320,
+    height: 240,
+    quality: 0.5,
+    grayscale: false,
+  };
+
+  async function captureImage() {
+    const res = await facelib.capture();
+    return await facelib.compress(res.blob, option);
+  }
+
+  //
+  // UI functions
+  //
+
+  let detected = null;
+  let user_info = null;
+
+  async function start() {
+    try {
+      const stream = await facelib.init();
+      video.srcObject = stream;
+      disable_button(start_button);
+      enable_button(detect_button);
+      message(0, '顔を検出してください。');
+    } catch(err) {
+      console.log('start error');
+      debug(err);
+      message(0, '撮影を開始できませんでした。カメラが接続され、他のアプリで使用していないことを確認して、もう一度撮影を開始してください。');
+    }
+  }
+
+  async function detect() {
+    const {params, blob} = await captureImage();
+    await facelib.drawImage(blob, rcanvas);
+    try {
+      const res = await facelib.postWithImage('/api/v1/detect', params, blob);
+      debug(`検出結果 ${JSON.stringify(res.data.faceRectangle)}`);
+      const {faceRectangle} = res.data;
+      if (faceRectangle.length === 0) {
+        message(0, '顔が検出できませんでした。もう一度検出してください。');
+      } else if(faceRectangle.length > 1) {
+        message(0, '複数の顔を検出しました。もう一度検出してください。');
+      } else {
+        detected = {params, blob, faceRectangle};
+        if (!user_info.registered) {
+          enable_button(register_button);
+          message(0, '顔画像を登録してください。');
+        } else if (user_info.allow_registration) {
+          enable_button(register_button);
+          enable_button(verify_button);
+          message(0, '顔画像を照合してください。顔画像を再登録することも可能です。');
+        } else {
+          enable_button(verify_button);
+          message(0, '顔画像を照合してください。');
+        }
+      }
+    } catch(err) {
+      console.log('detect error');
+      debug(`検出エラー code:${err.response.status} ${err.response.data}`);
+      message(0, 'サーバとの通信に失敗しました。');
+    }
+  }
+
+  async function register() {
+    const {params, blob} = detected;
+    try {
+      const res = await facelib.postWithImage('/api/v1/faces', params, blob);
+      debug(`登録画像 type:${params.type} width:${params.width} height:${params.height} size:${blob.size}`);
+      disable_button(detect_button);
+      disable_button(register_button);
+      disable_button(verify_button);
+      rcanvas.style.display = 'none';
+      message(0, '顔画像を登録しました。自動監視モードに移行します。');
+      start_auto_verify();
+    } catch(err) {
+      console.log('register error');
+      debug(`登録エラー code:${err.response.status} ${err.response.data}`);
+      message(0, 'サーバとの通信に失敗しました。');
+    }
+  }
+
+  async function verify() {
+    const {params, blob} = detected;
+    try {
+      const res = await facelib.postWithImage('/api/v1/verify', params, blob);
+      console.log(`照合画像 type:${params.type} width:${params.width} height:${params.height} size:${blob.size}`);
+      const {isIdentical, confidence} = res.data;
+      debug(`照合結果 ${isIdentical} 信頼度:${confidence}`);
+      if (isIdentical) {
+        disable_button(detect_button);
+        disable_button(register_button);
+        disable_button(verify_button);
+        rcanvas.style.display = 'none';
+        message(0, '顔画像の照合に成功しました。自動監視モードに移行します。');
+        start_auto_verify();
+      } else {
+        enable_button(detect_button);
+        disable_button(register_button);
+        disable_button(verify_button);
+        message(0, '顔画像の照合に失敗しました。');
+      }
+    } catch(err) {
+      console.log('verify error');
+      debug(`照合エラー code:${err.response.status} ${err.response.data}`);
+      message(0, 'サーバとの通信に失敗しました。');
+    }
+  }
+
+  window.onload = async function (){
+    console.log("window.onload");
+    try {
+      const {data} = await axios.get('/api/v1/user');
+      debug(`ユーザ設定 登録済み:${data.registered} 登録可能:${data.allow_registration}`);
+      user_info = data;
+      enable_button(start_button);
+      message(0, 'カメラによる撮影を開始してください。');
+    } catch(err) {
+      debug(err);
+      message(0, 'サーバとの通信に失敗しました。');
+    }
+  }
+
+  function start_auto_verify() {
+    console.log('start_auto_verify called');
+  }
+</script>
+</html>
