@@ -12,7 +12,6 @@ export async function init() {
     stream = await navigator.mediaDevices.getUserMedia(constraints);
     track = stream.getVideoTracks()[0];
     streamSettings = track.getSettings();
-    console.log(streamSettings);
     ic = new ImageCapture(track);
     return stream;
 　} catch(err) {
