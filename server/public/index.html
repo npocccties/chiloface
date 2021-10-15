@@ -88,8 +88,11 @@
 
   let detected = null;
   let user_info = null;
+  let inprogress = false;
 
   async function start() {
+    if (inprogress) return;
+    inprogress = true;
     try {
       const stream = await facelib.init();
       video.srcObject = stream;
@@ -101,9 +104,12 @@
       debug(err);
       message(0, '撮影を開始できませんでした。カメラが接続され、他のアプリで使用していないことを確認して、もう一度撮影を開始してください。');
     }
+    inprogress = false;
   }
 
   async function detect() {
+    if (inprogress) return;
+    inprogress = true;
     const {params, blob} = await captureImage();
     await facelib.drawImage(blob, rcanvas);
     try {
@@ -133,9 +139,12 @@
       debug(`検出エラー code:${err.response.status} ${err.response.data}`);
       message(0, 'サーバとの通信に失敗しました。');
     }
+    inprogress = false;
   }
 
   async function register() {
+    if (inprogress) return;
+    inprogress = true;
     const {params, blob} = detected;
     try {
       const res = await facelib.postWithImage('/api/v1/faces', params, blob);
@@ -151,9 +160,12 @@
       debug(`登録エラー code:${err.response.status} ${err.response.data}`);
       message(0, 'サーバとの通信に失敗しました。');
     }
+    inprogress = false;
   }
 
   async function verify() {
+    if (inprogress) return;
+    inprogress = true;
     const {params, blob} = detected;
     try {
       const res = await facelib.postWithImage('/api/v1/verify', params, blob);
@@ -178,9 +190,12 @@
       debug(`照合エラー code:${err.response.status} ${err.response.data}`);
       message(0, 'サーバとの通信に失敗しました。');
     }
+    inprogress = false;
   }
 
   window.onload = async function (){
+    if (inprogress) return;
+    inprogress = true;
     console.log("window.onload");
     try {
       const {data} = await axios.get('/api/v1/user');
@@ -192,6 +207,7 @@
       debug(err);
       message(0, 'サーバとの通信に失敗しました。');
     }
+    inprogress = false;
   }
 
   function start_auto_verify() {
