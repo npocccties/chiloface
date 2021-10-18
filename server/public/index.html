@@ -210,8 +210,39 @@
     inprogress = false;
   }
 
+  const settings = {
+    count: 3,
+    interval: 180,
+  }
+
+  let count = 0;
+  let start_time;
+
   function start_auto_verify() {
     console.log('start_auto_verify called');
+    start_time = new Date();
+    setTimeout(check, 10000);
+  }
+
+  async function check() {
+    const cur_time = new Date();
+    const duration = (cur_time.getTime() - start_time.getTime()) / 1000;
+
+    if (duration > (count + 1) * settings.interval) {
+      count++;
+      try {
+        const {params, blob} = await captureImage();
+        const res = await facelib.postWithImage('/api/v1/verify', params, blob);
+        const {isIdentical, confidence} = res.data;
+        debug(`回数 ${count} 照合結果 ${isIdentical} 信頼度:${confidence}`);
+      } catch(err) {
+        debug(err);
+      }
+    }
+
+    if (count < settings.count) {
+      setTimeout(check, 10000);
+    }
   }
 </script>
 </html>
