@@ -1,10 +1,11 @@
-const {MongoClient} = require('mongodb');
+const {MongoClient, ObjectId} = require('mongodb');
 const bcrypt = require('bcrypt');
 
 const url = process.env.FACE_DB;
 let client;
 let db;
 let users;
+let faces;
 let results;
 
 async function start(){
@@ -13,6 +14,7 @@ async function start(){
     await client.connect();
     db = client.db();
     users = db.collection('users');
+    faces = db.collection('faces');
     results = db.collection('results');
   } catch(err){
     console.log("error in start");
@@ -75,6 +77,80 @@ async function DoUser(arg1, arg2, arg3, arg4) {
   await stop();
 }
 
+async function DoFace(arg1, arg2, arg3, arg4) {
+  let res;
+  await start();
+
+  switch(arg1) {
+  case 'show':
+    if (arg2) {
+      const user = await users.findOne({name: arg2});
+      res = await faces.find({user_id: user._id}).toArray();
+    } else {
+      res = await faces.find().sort({createdAt: 1}).toArray();
+    }
+    res.forEach(face => {
+      face.data = face.data.length();
+      console.log(face);
+    });
+    break;
+  case 'show1':
+    const user = await users.findOne({name: arg2});
+    res = await faces.findOne({user_id: user._id},{sort: {createdAt: -1}});
+    if (res !== null) {
+      res.data = res.data.length();
+      console.log(res);
+    }
+    break;
+  case 'delete':
+    try {
+      res = await faces.deleteOne({_id: new ObjectId(arg2)});
+    } catch(err) {
+      const user = await users.findOne({name: arg2});
+      res = await faces.deleteMany({user_id: user._id});
+    }
+    console.log(res);
+    break;
+  }
+
+  await stop();
+}
+
+async function DoResult(arg1, arg2, arg3, arg4) {
+  let res;
+  await start();
+
+  switch(arg1) {
+  case 'show':
+    if (arg2) {
+      const user = await users.findOne({name: arg2});
+      res = await results.find({user_id: user._id}).toArray();
+    } else {
+      res = await results.find().sort({createdAt: 1}).toArray();
+    }
+    res.forEach(result => {
+      result.data = result.data.length();
+      console.log(result);
+    });
+    break;
+  case 'delete':
+    if (arg2 === 'all') {
+      res = await results.deleteMany();
+    } else {
+      try {
+        res = await results.deleteOne({_id: new ObjectId(arg2)});
+      } catch(err) {
+        const user = await users.findOne({name: arg2});
+        res = await results.deleteMany({user_id: user._id});
+      }
+    }
+    console.log(res);
+    break;
+  }
+
+  await stop();
+}
+
 const cmd = process.argv[2];
 const arg1 = process.argv[3];
 const arg2 = process.argv[4];
@@ -85,7 +161,11 @@ switch(cmd) {
   case 'user':
     DoUser(arg1, arg2, arg3, arg4);
     break;
+  case 'face':
+    DoFace(arg1, arg2, arg3, arg4);
+    break;
   case 'result':
+    DoResult(arg1, arg2, arg3, arg4);
     break;
   default:
     console.log('do nothing');
