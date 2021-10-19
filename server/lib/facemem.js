@@ -16,6 +16,9 @@ async function detect(image) {
 }
 
 async function verify(user, _, face) {
+  if (face === null) {
+    return null;
+  }
   const faceId1 = user.face?.faceId;
   const faceId2 = face.faceId;
   if (typeof faceId1 === 'undefined') {
@@ -30,6 +33,7 @@ function registerFace(user, image, face) {
     image,
     faceId,
   };
+  return true;
 }
 
 function getUserInfo(user) {
