@@ -2,7 +2,13 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const basicAuth = require('basic-auth')
-const face = require('../lib/facemem.js');
+
+let face;
+if (typeof process.env.FACE_DB !== 'undefined') {
+  face = require('../lib/facemongo.js');
+} else {
+  face = require('../lib/facemem.js');
+}
 
 const ERROR400 = "cannot detect face";
 const ERROR404 = "face not registered";
