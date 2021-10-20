@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const fs = require('fs');
-const basicAuth = require('basic-auth')
+const basicAuth = require('basic-auth');
+const bcrypt = require('bcrypt');
 
 let face;
 
@@ -43,16 +44,30 @@ function parseParam(req, res, next) {
 
 // check user
 async function checkUser(req, res, next) {
-  const credential = basicAuth(req);
-  if (typeof credential === 'undefined' || credential.name === '' ){
+  try {
+    const credential = basicAuth(req);
+    if (typeof credential === 'undefined' || credential.name === '' ){
+      throw 'credential error';
+    }
+    const user = await face.findUser(credential.name);
+    if (user === null) {
+      throw `user ${credential.name} not found`;
+    }
+    if (typeof user.password !== 'undefined') {
+      const same = await bcrypt.compare(credential.pass, user.password);
+      if (!same) {
+        throw `user ${credential.name} incorrect password`;
+      }
+    }
+    req.user = user;
+    next();
+  } catch(err) {
+    console.log('checkUser error: ' + err);
     res.setHeader('WWW-Authenticate', 'Basic');
     next({
       statusCode: 401,
       message: 'authentication error'
     });
-  } else {
-    req.user = await face.findUser(credential.name);
-    next();
   }
 }
 
