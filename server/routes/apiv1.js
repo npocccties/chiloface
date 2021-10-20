@@ -3,6 +3,7 @@ const router = express.Router();
 const fs = require('fs');
 const basicAuth = require('basic-auth');
 const bcrypt = require('bcrypt');
+const nocache = require('nocache');
 
 let face;
 
@@ -17,6 +18,9 @@ if (typeof process.env.FACE_DB !== 'undefined') {
 
 const ERROR400 = "cannot detect face";
 const ERROR404 = "face not registered";
+
+// no cache
+router.use(nocache());
 
 // parse parameter
 const multer = require('multer');
