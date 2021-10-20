@@ -6,6 +6,8 @@ const apiv1 = require('./routes/apiv1');
 
 const app = express();
 
+app.set('etag', false);
+
 app.use(logger('dev'));
 app.use(express.json({ extended: true, limit: '10mb' }));
 app.use(express.urlencoded({ extended: false }));
