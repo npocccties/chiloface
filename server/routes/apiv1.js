@@ -45,7 +45,7 @@ function parseParam(req, res, next) {
 async function checkUser(req, res, next) {
   const credential = basicAuth(req);
   if (typeof credential === 'undefined' || credential.name === '' ){
-    res.setHeader('WWW-Authenticate', 'Basic realm="tutorial"');
+    res.setHeader('WWW-Authenticate', 'Basic');
     next({
       statusCode: 401,
       message: 'authentication error'
