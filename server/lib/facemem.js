@@ -43,10 +43,18 @@ function getUserInfo(user) {
   };
 }
 
+function getSettings(_) {
+  return {
+    count: 3,
+    interval: 180,
+  };
+}
+
 module.exports = {
   findUser,
   detect,
   verify,
   registerFace,
   getUserInfo,
+  getSettings,
 };

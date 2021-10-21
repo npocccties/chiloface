@@ -152,6 +152,20 @@ router.get('/user', async function(req, res, next) {
   }
 });
 
+router.get('/settings', async function(req, res, next) {
+  try {
+    const result = await face.getSettings(req.user);
+    if (result !== null) {
+      res.send(result);
+    } else {
+      next(newError(400,'no settings'));
+    }
+  } catch(err) {
+    err.statusCode = 500;
+    next(err);
+  }
+});
+
 function errorHandler (err, req, res, next) {
   if (res.headersSent) {
     return next(err)

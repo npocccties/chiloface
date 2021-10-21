@@ -10,6 +10,7 @@ let db;
 let users;
 let faces;
 let results;
+let settings;
 
 async function start(){
   try {
@@ -19,6 +20,7 @@ async function start(){
     users = db.collection('users');
     faces = db.collection('faces');
     results = db.collection('results');
+    settings = db.collection('settings');
     console.log("facemongo: started");
   } catch(err){
     console.log("facemongo: error in start");
@@ -127,6 +129,10 @@ async function getUserInfo(user) {
   };
 }
 
+async function getSettings(user) {
+  return await settings.findOne();
+}
+
 module.exports = {
   start,
   findUser,
@@ -134,4 +140,5 @@ module.exports = {
   verify,
   registerFace,
   getUserInfo,
+  getSettings,
 };
