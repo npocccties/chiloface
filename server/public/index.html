@@ -17,9 +17,6 @@
   <button id="verify" onclick="verify()" disabled>照合</button>
   <br><br>
   <textarea id="msgbox" rows=5 cols=80></textarea>
-  <br><br>
-  <textarea id="debug_msgbox" rows=5 cols=80 style='display:none'></textarea>
-  <br><br>
 </body>
 
 <script type='module'>
@@ -29,8 +26,6 @@
   };
 </script>
 <script>
-  const show_debug_msg = true;
-
   const video = document.getElementById('video');
   const rcanvas = document.getElementById('rcanvas');
   const ccanvas = document.getElementById('ccanvas');
@@ -39,7 +34,6 @@
   const register_button = document.getElementById('register');
   const verify_button = document.getElementById('verify');
   const msgbox = document.getElementById('msgbox');
-  const debug_msgbox = document.getElementById('debug_msgbox');
 
   const msgs = [];
 
@@ -52,12 +46,7 @@
   }
 
   function debug(msg) {
-    if (show_debug_msg) {
-      debug_msgbox.style.display = 'block';
-      debug_msgbox.value = msg;
-    } else {
-      console.log(msg);
-    }
+    console.log(msg);
   }
 
   function disable_button(btn) {
@@ -68,7 +57,7 @@
     btn.disabled = false;
   }
 
-  const option = {
+  const compress_settings = {
     canvas: ccanvas,
     type: 'image/jpeg',
     width: 320,
@@ -79,7 +68,7 @@
 
   async function captureImage() {
     const res = await facelib.capture();
-    return await facelib.compress(res.blob, option);
+    return await facelib.compress(res.blob, compress_settings);
   }
 
   //
@@ -193,10 +182,38 @@
     inprogress = false;
   }
 
+  function merge(to, from) {
+    Object.keys(to).forEach(key => {
+      if (typeof from[key] !== 'undefined') {
+//        console.log(`key: ${key}, type: ${typeof to[key]}`);
+        switch(typeof to[key]) {
+          case 'string':
+            to[key] = from[key];
+            break;
+          case 'number':
+            to[key] = Number(from[key]);
+            break;
+        }
+      }
+    });
+  }
+
   window.onload = async function (){
     if (inprogress) return;
     inprogress = true;
     console.log("window.onload");
+    try {
+      const {data} = await axios.get('/api/v1/settings');
+      if (typeof data === 'object') {
+        merge(compress_settings, data);
+        merge(auto_settings, data);
+        console.log(compress_settings);
+        console.log(auto_settings);
+      }
+    } catch(err) {
+      debug('設定情報が取得できませんでした。');
+    }
+
     try {
       const {data} = await axios.get('/api/v1/user');
       debug(`ユーザ設定 登録済み:${data.registered} 登録可能:${data.allow_registration}`);
@@ -210,7 +227,7 @@
     inprogress = false;
   }
 
-  const settings = {
+  const auto_settings = {
     count: 3,
     interval: 180,
   }
@@ -228,7 +245,7 @@
     const cur_time = new Date();
     const duration = (cur_time.getTime() - start_time.getTime()) / 1000;
 
-    if (duration > (count + 1) * settings.interval) {
+    if (duration > (count + 1) * auto_settings.interval) {
       count++;
       try {
         const {params, blob} = await captureImage();
@@ -240,7 +257,7 @@
       }
     }
 
-    if (count < settings.count) {
+    if (count < auto_settings.count) {
       setTimeout(check, 10000);
     }
   }
