@@ -7,6 +7,7 @@ let db;
 let users;
 let faces;
 let results;
+let settings;
 
 async function start(){
   try {
@@ -16,6 +17,7 @@ async function start(){
     users = db.collection('users');
     faces = db.collection('faces');
     results = db.collection('results');
+    settings = db.collection('settings');
   } catch(err){
     console.log("error in start");
     console.log(err);
@@ -151,6 +153,33 @@ async function DoResult(arg1, arg2, arg3, arg4) {
   await stop();
 }
 
+async function DoSettings(arg1, arg2, arg3, arg4) {
+  let res;
+  let kv;
+  await start();
+
+  switch(arg1) {
+  case 'show':
+    res = await settings.findOne();
+    console.log(res);
+    break;
+  case 'add':
+    kv = {};
+    kv[arg2] = arg3;
+    res = await settings.updateOne({},{$set: kv},{upsert: true});
+    console.log(res);
+    break;
+  case 'delete':
+    kv = {};
+    kv[arg2] = "";
+    res = await settings.updateOne({},{$unset: kv});
+    console.log(res);
+    break;
+  }
+
+  await stop();
+}
+
 const cmd = process.argv[2];
 const arg1 = process.argv[3];
 const arg2 = process.argv[4];
@@ -166,6 +195,9 @@ switch(cmd) {
     break;
   case 'result':
     DoResult(arg1, arg2, arg3, arg4);
+    break;
+  case 'settings':
+    DoSettings(arg1, arg2, arg3, arg4);
     break;
   default:
     console.log('do nothing');
