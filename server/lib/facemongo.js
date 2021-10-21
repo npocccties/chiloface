@@ -130,7 +130,11 @@ async function getUserInfo(user) {
 }
 
 async function getSettings(user) {
-  return await settings.findOne();
+  const data = await settings.findOne();
+  if (data !== null) {
+    delete data._id;
+  }
+  return data;
 }
 
 module.exports = {
