@@ -1,5 +1,6 @@
 const {MongoClient, ObjectId} = require('mongodb');
 const bcrypt = require('bcrypt');
+const Papa = require('papaparse');
 
 const url = process.env.FACE_DB;
 let client;
@@ -74,6 +75,10 @@ async function DoUser(arg1, arg2, arg3, arg4) {
     res = await users.deleteOne({name: arg2});
     console.log(res);
     break;
+  case 'list':
+    res = await users.find().toArray();
+    console.log(Papa.unparse(res));
+    break;
   }
 
   await stop();
@@ -85,16 +90,22 @@ async function DoFace(arg1, arg2, arg3, arg4) {
 
   switch(arg1) {
   case 'show':
+  case 'list':
     if (arg2) {
       const user = await users.findOne({name: arg2});
       res = await faces.find({user_id: user._id}).toArray();
     } else {
       res = await faces.find().sort({createdAt: 1}).toArray();
     }
-    res.forEach(face => {
-      face.data = face.data.length();
-      console.log(face);
-    });
+    if (arg1 === 'show') {
+      res.forEach(face => {
+        face.data = face.data.length();
+        console.log(face);
+      });
+    } else {
+      res = res.map(e => {delete e.data; return e});
+      console.log(Papa.unparse(res));
+    }
     break;
   case 'show1':
     const user = await users.findOne({name: arg2});
@@ -124,16 +135,41 @@ async function DoResult(arg1, arg2, arg3, arg4) {
 
   switch(arg1) {
   case 'show':
+  case 'list':
     if (arg2) {
       const user = await users.findOne({name: arg2});
       res = await results.find({user_id: user._id}).toArray();
     } else {
       res = await results.find().sort({createdAt: 1}).toArray();
     }
-    res.forEach(result => {
-      result.data = result.data.length();
-      console.log(result);
-    });
+    if (arg1 === 'show') {
+      res.forEach(result => {
+        result.data = result.data.length();
+        console.log(result);
+      });
+    } else {
+      res = res.map(e => {
+        const {_id, createdAt, user_id, face_id, error} = e;
+        let {result} = e;
+        if (typeof result === 'undefined') {
+          result = {
+            isIdentical: false,
+            confidence: 0.0,
+          };
+        }
+        const {isIdentical, confidence} = result;
+        return {
+	  _id,
+          createdAt,
+          user_id,
+          face_id,
+          isIdentical,
+          confidence,
+          error,
+        };
+      });
+      console.log(Papa.unparse(res));
+    }
     break;
   case 'delete':
     if (arg2 === 'all') {
