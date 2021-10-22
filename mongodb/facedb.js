@@ -180,6 +180,36 @@ async function DoSettings(arg1, arg2, arg3, arg4) {
   await stop();
 }
 
+async function showIndexInfo(collection) {
+  const res = await db.indexInformation(collection);
+  console.log(collection, res);
+}
+
+async function DoIndex(arg1, arg2, arg3, arg4) {
+  let res;
+  let kv;
+  await start();
+
+  switch(arg1) {
+  case 'show':
+    await showIndexInfo('users');
+    await showIndexInfo('faces');
+    await showIndexInfo('results');
+    await showIndexInfo('settings');
+    break;
+  case 'add':
+    res = await db.collection(arg2).createIndex(arg3);
+    console.log(res);
+    break;
+  case 'delete':
+    res = await db.collection(arg2).dropIndex(arg3);
+    console.log(res);
+    break;
+  }
+
+  await stop();
+}
+
 const cmd = process.argv[2];
 const arg1 = process.argv[3];
 const arg2 = process.argv[4];
@@ -198,6 +228,9 @@ switch(cmd) {
     break;
   case 'settings':
     DoSettings(arg1, arg2, arg3, arg4);
+    break;
+  case 'index':
+    DoIndex(arg1, arg2, arg3, arg4);
     break;
   default:
     console.log('do nothing');
