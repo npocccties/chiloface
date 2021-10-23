@@ -14,12 +14,10 @@ const detectOption = {
 };
 
 async function DetectFace(image) {
-  console.log("========DETECT FACES========");
   return await client.face.detectWithStream(image, detectOption);
 }
 
 async function VerifyFaceToFace(face1, face2) {
-  console.log("========VERIFY FACES========");
   return await client.face.verifyFaceToFace(face1, face2);
 }
 

@@ -1,5 +1,6 @@
 const azure = require('./azure.js');
 const {MongoClient} = require('mongodb');
+const debug = require('debug')('mongo');
 
 const valid_duration = 3 * 3600 * 1000;    // 3 hours
 // const valid_duration = 30 * 1000;    // 30 seconds for test
@@ -21,10 +22,10 @@ async function start(){
     faces = db.collection('faces');
     results = db.collection('results');
     settings = db.collection('settings');
-    console.log("facemongo: started");
+    debug("facemongo: started");
   } catch(err){
-    console.log("facemongo: error in start");
-    console.log(err);
+    debug("facemongo: error in start");
+    debug(err);
   }
 }
 
@@ -48,7 +49,7 @@ async function findFace(user) {
 async function getAzureFaceId(face) {
   const now = new Date();
   if ((now.getTime() - face.faceIdAt.getTime()) > valid_duration) {
-    console.log("getAzureFaceId: update faceId");
+    debug("getAzureFaceId: update faceId");
     const res = await detect(face.data.read(0, face.data.length()));
     if (res.length > 0) {
       const {faceId, createdAt} = res[0];
@@ -61,15 +62,15 @@ async function getAzureFaceId(face) {
         }
       });
       if (!ures.acknowledged) {
-        console.log("getAzureFaceId: update error");
+        debug("getAzureFaceId: update error");
       }
       return faceId;
     }
-    console.log("getAzureFaceId: detect error");
+    debug("getAzureFaceId: detect error");
     return null;
   }
 
-  console.log("getAzureFaceId: reuse faceId");
+  debug("getAzureFaceId: reuse faceId");
   return face.faceId;
 }
 
@@ -102,7 +103,7 @@ async function verify(user, image, aface) {
     result: res,
     error,
   });
-  console.log(ires);
+
   return res;
 }
 
@@ -115,7 +116,7 @@ async function registerFace(user, image, aface) {
     faceId,
     faceIdAt: createdAt,
   });
-  console.log(res);
+
   return res.acknowledged;
 }
 

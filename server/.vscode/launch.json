@@ -12,7 +12,10 @@
         "<node_internals>/**"
       ],
       "program": "${workspaceFolder}/bin/www",
-      "outputCapture": "std"
+      "outputCapture": "std",
+      "env": {
+        "DEBUG": "mongo",
+      }
     }
   ]
 }
