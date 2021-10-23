@@ -151,7 +151,7 @@ async function DoResult(arg1, arg2, arg3, arg4) {
       res = res.map(e => {
         const {_id, createdAt, user_id, face_id, error} = e;
         let {result} = e;
-        if (typeof result === 'undefined') {
+        if (typeof result === 'undefined' || result === null) {
           result = {
             isIdentical: false,
             confidence: 0.0,
@@ -235,6 +235,10 @@ async function DoIndex(arg1, arg2, arg3, arg4) {
     break;
   case 'add':
     res = await db.collection(arg2).createIndex(arg3);
+    console.log(res);
+    break;
+  case 'unique':
+    res = await db.collection(arg2).createIndex(arg3, {unique: true});
     console.log(res);
     break;
   case 'delete':
