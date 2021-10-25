@@ -77,11 +77,22 @@ async function DoUser(arg1, arg2, arg3, arg4) {
     break;
   case 'list':
     res = await users.find().toArray();
+    res = res.map(e => {
+      e.createdAt = e.createdAt.toLocaleString('ja-JP');
+      return e;
+    });
     console.log(Papa.unparse(res));
     break;
   }
 
   await stop();
+}
+
+const uid2name = {};
+
+async function init_uid2name() {
+  const res = await users.find().toArray();
+  res.forEach(user => uid2name[user._id] = user.name);
 }
 
 async function DoFace(arg1, arg2, arg3, arg4) {
@@ -103,7 +114,16 @@ async function DoFace(arg1, arg2, arg3, arg4) {
         console.log(face);
       });
     } else {
-      res = res.map(e => {delete e.data; return e});
+      await init_uid2name();
+      res = res.map(e => {
+        const {_id, createdAt, user_id} = e;
+        return {
+          _id,
+          createdAt: createdAt.toLocaleString('ja-JP'),
+          user_id,
+          name: uid2name[e.user_id],
+        };
+      });
       console.log(Papa.unparse(res));
     }
     break;
@@ -148,6 +168,7 @@ async function DoResult(arg1, arg2, arg3, arg4) {
         console.log(result);
       });
     } else {
+      await init_uid2name();
       res = res.map(e => {
         const {_id, createdAt, user_id, face_id, error} = e;
         let {result} = e;
@@ -160,12 +181,13 @@ async function DoResult(arg1, arg2, arg3, arg4) {
         const {isIdentical, confidence} = result;
         return {
 	  _id,
-          createdAt,
+          createdAt: createdAt.toLocaleString('ja-JP'),
           user_id,
           face_id,
           isIdentical,
           confidence,
           error,
+          name: uid2name[e.user_id],
         };
       });
       console.log(Papa.unparse(res));
