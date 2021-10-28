@@ -30,7 +30,6 @@ async function verify(user, _, face) {
 function registerFace(user, image, face) {
   const {faceId} = face;
   user.face = {
-    image,
     faceId,
   };
   return true;
