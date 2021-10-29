@@ -69,3 +69,34 @@ FACE_DB 環境変数を指定しないで顔画像サーバを起動すると、
 - 顔画像サーバを停止すると、すべての記録が失われる
 - 動作中も顔画像イメージはメモリーに保持しない
 - 顔画像の特徴量は Azure FACE API に保持され、顔画像サーバは照合するときに使用する faceId のみ保持する
+
+## docker でサーバーを起動する
+
+顔画像サーバを含む docker イメージをビルドします。
+
+```
+$ cd server
+$ docker build -t face-server .
+```
+
+直接起動する場合と同様に、AZURE_KEY, AZURE_ENDPOINT 環境変数を設定します。その後、下記いずれかの方法で docker コンテナを起動します。
+
+(方法1) MongoDB を使わない
+
+```
+$ docker run -p 3000:3000/tcp -e AZURE_KEY=$AZURE_KEY -e AZURE_ENDPOINT=$AZURE_ENDPOINT face-server
+```
+
+(方法2) FACE_DB で localhost の代わりに host.docker.internal を指定する
+
+```
+$ export FACE_DB=mongodb://<DBUser>:<DBUserPassword>@host.docker.internal/<DBName>
+$ docker run -p 3000:3000/tcp -e AZURE_KEY=$AZURE_KEY -e AZURE_ENDPOINT=$AZURE_ENDPOINT -e FACE_DB=$FACE_DB face-server
+```
+
+(方法3) FACE_DB で localhost の代わりに docker ホストのIPアドレスを指定する
+
+```
+$ export FACE_DB=mongodb://<DBUser>:<DBUserPassword>@172.29..../<DBName>
+$ docker run -p 3000:3000/tcp -e AZURE_KEY=$AZURE_KEY -e AZURE_ENDPOINT=$AZURE_ENDPOINT -e FACE_DB=$FACE_DB face-server
+```
