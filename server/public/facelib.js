@@ -22,23 +22,20 @@ export async function init() {
 
 export async function capture() {
   try {
-    const blob = await ic.takePhoto();
-    return {
-      blob,
-      params: {
-        type: blob.type,
-        width: streamSettings.width,
-        height: streamSettings.height,
-      },
-    };
+    return await ic.grabFrame();
   } catch(err) {
     console.log('capture error');
     throw err;
   }
 };
 
-export async function drawImage(blob, canvas, grayscale = false){
-  const bitmap = await createImageBitmap(blob);
+export async function drawImage(src, canvas, grayscale = false){
+  let bitmap;
+  if (src instanceof ImageBitmap) {
+    bitmap = src;
+  } else {
+    bitmap = await createImageBitmap(src);
+  }
   const ctx = canvas.getContext("2d");
   if (grayscale) {
     ctx.filter = 'grayscale(1)';
@@ -48,11 +45,11 @@ export async function drawImage(blob, canvas, grayscale = false){
   ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
 };
 
-export async function compress(oblob, option) {
+export async function compress(bitmap, option) {
   const {canvas, width, height} = option;
   canvas.width = width;
   canvas.height = height;
-  await drawImage(oblob, canvas, option.grayscale);
+  await drawImage(bitmap, canvas, option.grayscale);
   const blob = await new Promise(resolve => {
     canvas.toBlob(b => {
       resolve(b);

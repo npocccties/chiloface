@@ -67,8 +67,8 @@
   };
 
   async function captureImage() {
-    const res = await facelib.capture();
-    return await facelib.compress(res.blob, compress_settings);
+    const bitmap = await facelib.capture();
+    return await facelib.compress(bitmap, compress_settings);
   }
 
   //
