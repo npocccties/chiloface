@@ -147,26 +147,15 @@ GET /api/v1/settings で取得する設定情報を返す
 
 - capture()
 
-画像を取得、{blob, params}を返す
+画像を取得、ImageBitmap を返す
 
-```
-{
-  blob: 画像
-  params: {
-    type: 画像の種類、image/png, image/jpeg など
-    width: 幅
-    height: 高さ
-  }
-}
-```
+- drawImage(src, canvas, grayscale = false)
 
-- drawImage(blob, canvas, grayscale = false)
-
-画像を canvas に描画、grayscale 化可能
+画像(blob または ImageBitmap)を canvas に描画、grayscale 化可能
 
 - compress(blob, option)
 
-以下の option設定に従って blob を圧縮し{blob, params}を返す
+以下の option設定に従って ImageBitmap を圧縮し{blob, params}を返す
 
 ```
 {

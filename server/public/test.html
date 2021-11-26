@@ -117,13 +117,17 @@
   }
 
   async function captureImage() {
-    let res = await facelib.capture();
+    let bitmap = await facelib.capture();
     if (doCompress) {
       option.quality = Number(ctext.value);
       option.grayscale = gcheckbox.checked;
-      res = await facelib.compress(res.blob, option);
+    } else {
+      option.width = bitmap.width;
+      option.height = bitmap.height;
+      option.quality = 1.0;
+      option.grayscale = false;
     }
-    return res;
+    return await facelib.compress(bitmap, option);
   }
 
   async function detect() {
